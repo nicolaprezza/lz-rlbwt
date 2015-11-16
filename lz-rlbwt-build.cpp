@@ -25,17 +25,18 @@ using namespace std;
 string out_basename=string();
 string input_file=string();
 
+//default: light index
 bool bidirectional_opt=false;
 bool light_opt=true;
 
 void help(){
 	cout << "lz-rlbwt-build" << endl << endl;
 	cout << "Usage: lz-rlbwt-build [options] <input_file_name>" << endl;
-	cout << "   -o <basename>       use 'basename' as prefix for all index files. Default: basename is the specified input_file_name"<<endl<<endl;
-	cout << "   --full              create 2 RLBWT and 2 geometric range structures." << endl;
-	cout << "   --bidirectional     omit reverse BWT index." << endl;
-	cout << "   --light             omit forward BWT index and 4-sided range structure. DEFAULT." << endl <<endl;
-	cout << "   <input_file_name>   input text file." << endl;
+	cout << "   -o <basename>         use 'basename' as prefix for all index files. Default: basename is the specified input_file_name"<<endl<<endl;
+	cout << "   -f, --full            build 2 RLBWT and 2 geometric range structures." << endl;
+	cout << "   -b, --bidirectional   build 1 RLBWT and 2 geometric range structures." << endl;
+	cout << "   -l, --light           build 1 RLBWT and 1 geometric range structure. DEFAULT." << endl <<endl;
+	cout << "   <input_file_name>     input text file." << endl;
 	exit(0);
 }
 
@@ -56,17 +57,17 @@ void parse_args(char** argv, int argc, int &ptr){
 		out_basename = string(argv[ptr]);
 		ptr++;
 
-	}else if(s.compare("--bidirectional")==0){
+	}else if(s.compare("--bidirectional")==0 or s.compare("-b")==0){
 
 		bidirectional_opt = true;
 		light_opt = false;
 
-	}else if(s.compare("--light")==0){
+	}else if(s.compare("--light")==0 or s.compare("-l")==0){
 
 		light_opt = true;
 		bidirectional_opt = false;
 
-	}else if(s.compare("--full")==0){
+	}else if(s.compare("--full")==0 or s.compare("-f")==0){
 
 		bidirectional_opt = false;
 		light_opt = false;

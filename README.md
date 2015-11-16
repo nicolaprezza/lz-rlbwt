@@ -1,4 +1,4 @@
-lz-rlbwt: Run-Length Compressed Burrows-Wheeler transform with LZ77 sampling
+lz-rlbwt: Run-Length Compressed Burrows-Wheeler transform with LZ77 suffix array sampling
 ===============
 Author: Nicola Prezza (nicolapr@gmail.com)
 

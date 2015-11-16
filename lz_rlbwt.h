@@ -67,9 +67,9 @@ enum bwt_type {ef_rlbwt,h_rlbwt};
 /*
  * Components stored in the index:
  *
- * - bidirectional: fwd BWT, 4-sided range, 2-sided range, st_subset, bitvector last
- * - light: rev BWT, 2-sided range, bitvector last
- * - full: fwd BWT, rev BWT, 4-sided range, 2-sided range, st_subset, bitvector last
+ * - bidirectional: fwd BWT, 4-sided range, 2-sided range, st_subset, bitvector last, SA samples
+ * - light: rev BWT, 2-sided range, bitvector last, SA samples
+ * - full: fwd BWT, rev BWT, 4-sided range, 2-sided range, st_subset, bitvector last, SA samples
  *
  */
 enum lz_rlbwt_type {bidirectional,light,full};
@@ -87,8 +87,6 @@ template<
 	class fm_index_t = rlbwt_sd, 		// RLBWT using Elias-Fano compression on the gap lengths.
 	class sparse_bitvector_t = sparse_sd_vector<>,		// elias-fano sparse bitvector
 	class range_search_t = range_search_2D<> 	// class implementing 2-sided and 4-sided range search.
-												//Each point is associated with the text position of the
-												//corresponding LZ phrase
 >
 class lz_rlbwt{
 
@@ -122,9 +120,9 @@ public:
 	// build the lz_rlbwt of the input string
 	/* \param input		string to be indexed
 	 * \param options	list of options: by default, empty (no verbose and no bidirectional bwt.)
-	 * TODO we assume that all letters in the input text are right-maximal.
+	 * NOTE: we assume that all letters in the input text are right-maximal.
 	 */
-	lz_rlbwt(string &input, vector<lzrlbwt_options> opt = {}){
+	lz_rlbwt(string &input, vector<lzrlbwt_options> opt = {verbose_out, light_index}){
 
 		bool verbose=false;
 		type = full;
