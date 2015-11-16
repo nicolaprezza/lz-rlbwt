@@ -1,0 +1,3 @@
+[submodule "extern/BWTIL"]
+	path = extern/BWTIL
+	url = https://github.com/nicolaprezza/BWTIL
