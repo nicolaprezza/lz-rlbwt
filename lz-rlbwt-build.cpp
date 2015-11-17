@@ -79,13 +79,6 @@ void parse_args(char** argv, int argc, int &ptr){
 
 }
 
-void build_lz_rlbwt(string &input, vector<lzrlbwt::lzrlbwt_options> opt){
-
-	auto idx = lz_rlbwt<>(input,opt);
-	idx.save_to_file(out_basename, true);
-
-}
-
 int main(int argc, char** argv){
 
     using std::chrono::high_resolution_clock;
@@ -126,7 +119,7 @@ int main(int argc, char** argv){
 
 	}
 
-	vector<lzrlbwt::lzrlbwt_options> opt;
+	vector<lzrlbwt_options> opt;
 
 	if(bidirectional_opt)
 		opt = {verbose_out, bidirectional_bwt};
@@ -135,7 +128,7 @@ int main(int argc, char** argv){
 	else
 		opt = {verbose_out};
 
-	auto idx = lz_rlbwt<>(input,opt);
+	lz_rlbwt<> idx = lz_rlbwt<>(input,opt);
 	idx.save_to_file(out_basename, true);
 
 	printRSSstat();

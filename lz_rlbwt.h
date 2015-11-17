@@ -27,7 +27,11 @@
  *
  *  This class permits to answer count and locate queries. Letting n be the text length,
  *  m the pattern length, and occ the number of pattern occurrences, count takes O(m log log n) time,
- *  and locate O(m log z + occ * log z) time.
+ *  and locate takes (depending on the version - see constructor):
+ *
+ *  -full: O( (m+occ) * log n) time
+ *  -bidirectional: O( (m^2+occ) * log n ) time
+ *  -light: O( m * log n * (occ+1) ) time
  *
  *  The class is a template on the word type and on its building blocks (FM index, range search,
  *  sparse bitvector.)
@@ -122,7 +126,7 @@ public:
 	 * \param options	list of options: by default, empty (no verbose and no bidirectional bwt.)
 	 * NOTE: we assume that all letters in the input text are right-maximal.
 	 */
-	lz_rlbwt(string &input, vector<lzrlbwt_options> opt = {verbose_out, light_index}){
+	lz_rlbwt(string &input, vector<lzrlbwt_options> opt = {}){
 
 		bool verbose=false;
 		type = full;
@@ -203,12 +207,27 @@ public:
 		string four_sided_filename = string(base_name).append(".lzrlbwt.4_sided_range");
 		string st_subset_filename = string(base_name).append(".lzrlbwt.st_subset");
 		string last_filename = string(base_name).append(".lzrlbwt.end_phrases");
+		string start_filename = string(base_name).append(".lzrlbwt.beg_phrases");
 		string sa_samples_filename = string(base_name).append(".lzrlbwt.sa_samples");
 
 		//write lz-rlbwt type
 		std::ofstream type_ofs (type_basename,std::ofstream::binary);
 		type_ofs.write((char*)&type,sizeof(type));
 		type_ofs.close();
+
+
+		{
+
+			if(verbose)
+				cout << "Saving start of phrases (text positions) ... " << flush;
+
+			std::ofstream out (start_filename,std::ofstream::binary);
+			begin_of_phrase.serialize(out);
+
+			if(verbose)
+				cout << "done!" << endl;
+
+		}
 
 		if(type != light){
 
@@ -267,7 +286,7 @@ public:
 		}
 
 		if(verbose)
-			cout << "Saving sparse bitvector data structure (end of phrases) ... " << flush;
+			cout << "Saving end of phrases (BWT positions) ... " << flush;
 
 		std::ofstream out (last_filename,std::ofstream::binary);
 		last->serialize(out);
@@ -329,12 +348,28 @@ public:
 		string four_sided_filename = string(base_name).append(".lzrlbwt.4_sided_range");
 		string st_subset_filename = string(base_name).append(".lzrlbwt.st_subset");
 		string last_filename = string(base_name).append(".lzrlbwt.end_phrases");
+		string start_filename = string(base_name).append(".lzrlbwt.beg_phrases");
 		string sa_samples_filename = string(base_name).append(".lzrlbwt.sa_samples");
 
 		//read lz-rlbwt type
 		std::ifstream type_ofs (type_basename,std::ifstream::binary);
 		type_ofs.read((char*)&type,sizeof(type));
 		type_ofs.close();
+
+		{
+
+			if(verbose)
+				cout << "Loading sparse bitvector data structure (begin of phrases on text) ... " << flush;
+
+			std::ifstream in (start_filename,std::ifstream::binary);
+			begin_of_phrase.load(in);
+
+			in.close();
+
+			if(verbose)
+				cout << "done!" << endl;
+
+		}
 
 		if(type != light){
 
@@ -394,7 +429,7 @@ public:
 		}
 
 		if(verbose)
-			cout << "Loading sparse bitvector data structure (end of phrases) ... " << flush;
+			cout << "Loading sparse bitvector data structure (end of phrases on BWT) ... " << flush;
 
 		std::ifstream in (last_filename,std::ifstream::binary);
 		last = new sparse_bitvector_t();
@@ -535,6 +570,14 @@ private:
 
 				if( rev_range.second>=rev_range.first ){
 
+					//rev ranges start from 1. remap so that they start from 0
+
+					assert(rev_range.first>0);
+					assert(rev_range.second>0);
+
+					rev_range.first--;
+					rev_range.second--;
+
 					//query 4-sided range data structure
 					auto four_sided_result =
 							lz_4_sided_range_search->four_sided_range_search(rev_range,range_fwd);
@@ -548,10 +591,16 @@ private:
 
 						for(auto o : four_sided_result){
 
-							//o.second is the beginning position of the right factor
+							//o.second is the phrase number (of right factor)
+
+							//convert from phrase rank to text position with a select query
+
+							assert(o.second < begin_of_phrase.rank(begin_of_phrase.size()));
+							ulint start_position = begin_of_phrase.select(o.second);
+
 							//compute correct coordinate (left-shift)
-							assert(o.second >= m-i);
-							occ_temp.push_back( o.second - (m-i) );
+							assert(start_position >= m-i);
+							occ_temp.push_back( start_position - (m-i) );
 
 						}
 
@@ -650,11 +699,20 @@ private:
 		assert(rn.first<=last->size());
 		assert(rn.second+1<=last->size());
 		assert(SA_samples.size() == last->rank(last->size()));
+		assert(SA_samples.size() == begin_of_phrase.rank(begin_of_phrase.size()));
 
 		for(ulint j = last->rank(rn.first);j<last->rank(rn.second+1);++j){
 
 			assert(j<SA_samples.size());
-			occ.insert( SA_samples[j] - (i - 1) );
+			ulint text_position = begin_of_phrase.select(SA_samples[j]);
+
+			//decrement: text_position is the first position of a phrase, but we
+			//are interested in the last position of previous phrase
+			assert(text_position>0);
+			text_position--;
+
+			assert(text_position >= (i - 1));
+			occ.insert( text_position - (i - 1) );
 
 		}
 
@@ -688,12 +746,12 @@ private:
 
 		bwt_length=text_length + 1;
 
-		//this vector will contain true in positions that are the first character of a phrase
-		vector<bool> phrase_borders;
-
-		ulint z=0;	//number of LZ phrases
-
 		{
+
+			//this vector will contain true in positions that are the first character of a phrase
+			vector<bool> phrase_start_vec;
+
+			ulint z=0;	//number of LZ phrases
 
 			//this vector will contain the 2D points for range search, one per phrase
 			vector<pair<point_2d_t, ulint> > two_sided_points;
@@ -708,12 +766,10 @@ private:
 				assert((not token.start_position_is_defined) or token.start_position < phrase_start_position);
 
 				//append a true: we are at the beginning of a phrase
-				phrase_borders.push_back(true);
+				phrase_start_vec.push_back(true);
 				//append false for the remaining phrase characters
 				for(ulint i=1;i<token.phrase.size();++i)
-					phrase_borders.push_back(false);
-
-				z++;	//increment number of phrases
+					phrase_start_vec.push_back(false);
 
 				//for all factors with a start position, insert the corresponding point in the
 				//2-sided range search structure
@@ -723,10 +779,13 @@ private:
 					point_2d_t point = {(ulint)token.start_position,
 										(ulint)(token.start_position + token.phrase.size()-1)};
 
-					//insert the point in the vector of points
-					two_sided_points.push_back({point,phrase_start_position});
+					//insert the point in the vector of points.
+					//we associate phrase rank (z) to each point
+					two_sided_points.push_back({point,z});
 
 				}
+
+				z++;	//increment number of phrases
 
 				//compute start position of next phrase
 				phrase_start_position += token.phrase.size();
@@ -742,9 +801,11 @@ private:
 			if(verbose)
 				cout << "done!" << endl;
 
-		}
+			assert(phrase_start_vec.size()==text_length);
 
-		assert(phrase_borders.size()==text_length);
+			begin_of_phrase = sparse_bitvector_t(phrase_start_vec);
+
+		}
 
 		// Now build FM indexes
 
@@ -783,8 +844,8 @@ private:
 			for(ulint i=0;i<text_length;++i){
 
 				//if i is the first position of a phrase and i>0, then the current BWT position is last
-				//position of a phrase
-				if(phrase_borders[i] and i>0){
+				//position of a phrase on column F
+				if(begin_of_phrase[i] and i>0){
 
 					assert(bwt_pos < last_bv.size());
 
@@ -795,6 +856,12 @@ private:
 				bwt_pos = fm_index_rev->LF(bwt_pos);		//update position in the BWT
 
 			}
+
+			//now bwt_pos is the position on BWT of #. With another step we go back to the
+			//position of # on the F column, which must be equal to 0 if everything is correct
+			bwt_pos = fm_index_rev->LF(bwt_pos);
+			assert(bwt_pos==0);
+			last_bv[bwt_pos] = true;
 
 			//now convert the bitvector to a sparse bitvector
 
@@ -812,9 +879,15 @@ private:
 				cout << "Sampling suffix array on LZ phrase borders ... " << flush;
 
 			assert(text_length>0);
-			ulint bitlength = intlog2(text_length);
+			//in SA_samples we write phrase ranks (on the text)
 
-			SA_samples = packed_view<vector>(bitlength, last->rank(last->size()));
+			ulint z = begin_of_phrase.rank(begin_of_phrase.size());
+
+			assert( z == last->rank(last->size()));
+
+			ulint bitlength =  64 - __builtin_clzll(z);
+
+			SA_samples = packed_view<vector>(bitlength, z);
 			assert(SA_samples.width()==bitlength);
 
 			//position on F column of rev BWT
@@ -826,12 +899,12 @@ private:
 
 				//if i is the first position of a phrase and i>0, then the current BWT position
 				//is last position of a phrase
-				if(phrase_borders[i] and i>0){
+				if(begin_of_phrase[i] and i>0){
 
 					assert(F_pos < last->size());
 					assert(last->at(F_pos));
 
-					SA_samples[last->rank(F_pos)] = i-1;
+					SA_samples[last->rank(F_pos)] = begin_of_phrase.rank(i);
 
 				}
 
@@ -884,7 +957,7 @@ private:
 				range = fm_index_fwd->LF(range, input[text_length-i-1]);
 
 				//if this character is the begin of a phrase, then current range is a the range of a factor
-				if(phrase_borders[text_length-i-1]){
+				if(begin_of_phrase[text_length-i-1]){
 
 					//insert range in the set
 					bwt_intervals_set.insert(range);
@@ -942,7 +1015,7 @@ private:
 				range = fm_index_fwd->LF(range, input[text_length-i-1]);
 
 				//if this character is the begin of a phrase, then current range is a the range of a factor
-				if(phrase_borders[text_length-i-1]){
+				if(begin_of_phrase[text_length-i-1]){
 
 					auto comp = [](const pair<ulint,ulint> &A, const pair<ulint,ulint> &B){
 
@@ -987,12 +1060,15 @@ private:
 			//current position in fwd_ranks
 			ulint fwd_ranks_ptr = 0;
 
+			//phrase number 0 is not used
+			ulint phrase_nr = 1;
+
 			//scan forward text from first to last character
 			for(ulint i=0;i<text_length;++i){
 
 				//if current position is the begin of a phrase AND current position is not the first
 				//then range is the position in rev. BWT of the end of the left factor
-				if(phrase_borders[i] and i>0){
+				if(begin_of_phrase[i] and i>0){
 
 					//make sure that there is a 1 in this BWT position of last
 					assert(range.first<=last->size());
@@ -1000,13 +1076,18 @@ private:
 					assert(fwd_ranks_ptr<fwd_ranks.size());
 
 					//the 2D point: rank on reverse, rank on forward
-					point_2d_t p = {(ulint)last->rank(range.first),
+					assert(last->rank(range.first)>0);
+
+					//since rev ranks start from 1 (we never use last phrase as left phrase
+					//in a 2D point AND rank of last phrase is 0 in bitvector last), we
+					//subtract 1 so that x coordinates start from 0
+					point_2d_t p = {(ulint)last->rank(range.first)-1,
 									(ulint)fwd_ranks[fwd_ranks.size()-fwd_ranks_ptr-1]};
 
 					fwd_ranks_ptr++;
 
-					//insert new point:
-					points.push_back( {p,i} );
+					//insert new point
+					points.push_back( {p,phrase_nr++} );
 
 				}
 
@@ -1147,7 +1228,11 @@ private:
 		for(auto p : points){
 
 			ulint b = p.first.x;
-			ulint i = p.second;
+
+			//p.second is a phrase rank. We need to re-map this with a select query
+			assert(p.second < begin_of_phrase.rank(begin_of_phrase.size()));
+			ulint i = begin_of_phrase.select(p.second);
+
 			ulint shift = begin - b;
 			ulint j = i+shift; //new occurrence of the pattern in position j=i+shift
 
@@ -1184,6 +1269,9 @@ private:
 	//on the L column of rev BWT that correspond to begin of phrases (except text position
 	//0 == BWT position 0 which is not marked
 	sparse_bitvector_t * last  = NULL;
+
+	//this sparse bitvector marks with a 1 the first position of each phrase
+	sparse_bitvector_t begin_of_phrase;
 
 	st_subset * st_sub = NULL;	//interval data structure on the subset of nodes of the suffix tree
 								//corresponding to the LZ phrases

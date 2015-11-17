@@ -23,13 +23,7 @@ using namespace lzrlbwt;
 
 int main(int argc, char** argv){
 
-	string in = "abababababababababababababababababababab";
-	auto rl = lz_rlbwt<>(in);
 
-	string P = "ab";
-	auto occ = rl.locate(P);
-
-	for(auto o:occ) cout << o << endl;
 
 }
 

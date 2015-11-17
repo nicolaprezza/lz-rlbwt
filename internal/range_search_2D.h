@@ -86,7 +86,7 @@ public:
 
 		using pair_t = pair<point_2d_t, ulint>;
 
-		//sort the points with respect to the x coordinate
+		//sort the points with respect to their x coordinate
 		std::sort(	points.begin(),
 					points.end(),
 					[](const pair_t &left, const pair_t &right) {
