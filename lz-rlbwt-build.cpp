@@ -105,7 +105,7 @@ int main(int argc, char** argv){
 		out_basename = string(input_file);
 
 	cout << "Building lz-rlbwt of input file '" << input_file << "'" << endl;
-	cout << "Prefix '" << out_basename << "' will be used for the index files." << endl;
+	cout << "Prefix '" << out_basename << "' will be used for all index files." << endl;
 
 	string input;
 

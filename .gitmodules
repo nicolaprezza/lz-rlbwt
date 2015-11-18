@@ -1,3 +1,6 @@
 [submodule "extern/BWTIL"]
 	path = extern/BWTIL
 	url = https://github.com/nicolaprezza/BWTIL
+[submodule "extern/DYNAMIC"]
+	path = extern/DYNAMIC
+	url = https://github.com/nicolaprezza/DYNAMIC

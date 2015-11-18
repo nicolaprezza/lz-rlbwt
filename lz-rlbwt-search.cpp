@@ -60,6 +60,8 @@ void search(string idx_basename, string patterns){
 
 	uint last_perc = 0;
 
+	ulint occ_tot=0;
+
 	//extract patterns from file and search them in the index
 	for(ulint i=0;i<n;++i){
 
@@ -77,14 +79,22 @@ void search(string idx_basename, string patterns){
 			p+=c;
 		}
 
+		//cout << "locating " << idx.count(p) << " occurrences of "<< p << " ... " << flush;
+
 		auto occ = idx.locate(p);	//occurrences
 
-		//TODO remove
-		cout << "occurrences of "<< p << " : ";
-		for(auto o:occ) cout << o << " ";
-		cout << endl;
+		occ_tot+=occ.size();
+
+		//cout << "done." << endl;
+
+		//for(auto o:occ) cout << o << " ";
+		//cout << endl;
 
 	}
+
+	double occ_avg = (double)occ_tot / n;
+
+	cout << endl << occ_avg << " average occurrences per pattern" << endl;
 
 	ifs.close();
 
@@ -92,10 +102,19 @@ void search(string idx_basename, string patterns){
 
 	printRSSstat();
 
-	ulint load = duration_cast<duration<double, std::ratio<1>>>(t2 - t1).count();
-	cout << "Load time : " << get_time(load) << endl;
-	ulint search = duration_cast<duration<double, std::ratio<1>>>(t3 - t2).count();
-	cout << "Search time : " << get_time(search) << endl;
+	uint64_t load = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+	cout << "Load time : " << load << " milliseconds" << endl;
+
+	uint64_t search = std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count();
+	cout << "number of patterns n = " << n << endl;
+	cout << "pattern length m = " << m << endl;
+	cout << "total number of occurrences  occ_t = " << occ_tot << endl;
+	cout << "m * occ_t  = " << occ_tot*m << endl;
+	cout << "n*m + occ_t  = " << n*m+occ_tot << endl << endl;
+
+	cout << "Total search time : " << search << " milliseconds" << endl;
+	cout << "Search time : " << (double)search/n << " milliseconds/pattern (total: " << n << " patterns)" << endl;
+	cout << "Search time : " << (double)search/occ_tot << " milliseconds/occurrence (total: " << occ_tot << " occurrences)" << endl;
 
 }
 

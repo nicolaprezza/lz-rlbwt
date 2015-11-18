@@ -15,6 +15,8 @@ include_directories(${PROJECT_SOURCE_DIR}/internal)
 include_directories(~/include) #SDSL headers are here
 include_directories(${PROJECT_SOURCE_DIR}/extern/BWTIL)
 include_directories(${PROJECT_SOURCE_DIR}/extern/BWTIL/extern/bitvector/include)
+include_directories(${PROJECT_SOURCE_DIR}/extern/DYNAMIC/include)
+include_directories(${PROJECT_SOURCE_DIR}/extern/DYNAMIC/include/internal)
 
 LINK_DIRECTORIES(~/lib) #SDSL lib are here
 

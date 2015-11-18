@@ -33,6 +33,9 @@
  *  -bidirectional: O( (m^2+occ) * log n ) time
  *  -light: O( m * log n * (occ+1) ) time
  *
+ *	bidirectional and light indexes have several optimizations implemented, so the worst cases
+ *	rarely should occur.
+ *
  *  The class is a template on the word type and on its building blocks (FM index, range search,
  *  sparse bitvector.)
  *  Choosing a smaller ulint (default=32 bit) reduces the size of the structure. Even though it is possible
@@ -58,12 +61,17 @@
 #include <range_search_2D.h>
 #include <st_subset.h>
 #include <packed_view.h>
+#include <dynamic.hpp>
 
 using namespace std;
 using namespace sdsl;
 using namespace bwtil;
+using namespace dyn;
 
 namespace lzrlbwt{
+
+typedef lz77_parser<gap_bv,packed_spsi> lz77_parser_t;
+//typedef lz77_parser<> lz77_parser_t;
 
 //type of the run-length BWT: Elias-Fano RLBWT / Huffman RLBWT
 enum bwt_type {ef_rlbwt,h_rlbwt};
@@ -232,7 +240,7 @@ public:
 		if(type != light){
 
 			if(verbose)
-				cout << "Saving forward FM index ... " << flush;
+				cout << "Saving forward RLBWT ... " << flush;
 
 			assert(fm_index_fwd!=0);
 
@@ -246,7 +254,7 @@ public:
 		if(type!=bidirectional){
 
 			if(verbose)
-				cout << "Saving reverse FM index ... " << flush;
+				cout << "Saving reverse RLBWT ... " << flush;
 
 			assert(fm_index_rev!=0);
 
@@ -723,12 +731,11 @@ private:
 		if(verbose)
 			cout << "Initializing structures for the LZ77 parser ... " << endl;
 
-		lz77_parser<> parser;
 		set<pair<uchar,ulint> > alphabet_and_freq;
 
 		{
 			std::istringstream iss(input);
-			alphabet_and_freq = lz77_parser<>::get_alphabet_and_frequencies(iss);
+			alphabet_and_freq = lz77_parser_t::get_alphabet_and_frequencies(iss);
 		}
 
 		alphabet = vector<uchar>();
@@ -739,7 +746,8 @@ private:
 		std::sort(alphabet.begin(),alphabet.end());
 
 		std::istringstream istr(input);
-		parser = lz77_parser<>(istr,alphabet_and_freq,8,true);
+
+		auto parser = lz77_parser_t(istr,alphabet_and_freq,128,true);
 
 		//size of the text
 		ulint text_length = input.size();
@@ -812,7 +820,7 @@ private:
 		// reverse index:
 
 		if(verbose)
-			cout << "Building reverse FM index ... " << flush;
+			cout << "Building reverse RLBWT ... " << flush;
 
 		{
 			string rev_text;
@@ -921,7 +929,7 @@ private:
 		//forward index
 
 		if(verbose)
-			cout << "Building forward FM index ... " << flush;
+			cout << "Building forward RLBWT ... " << flush;
 
 		fm_index_fwd = new fm_index_t(input);
 
@@ -1238,6 +1246,7 @@ private:
 
 			//call recursively on the occurrence found
 			assert(j+m-1<bwt_length-1);
+			assert(j>begin);
 			auto recursive_occ = query_2_sided_recursive(j,j+m-1);
 
 			//append all found occurrences to the final result

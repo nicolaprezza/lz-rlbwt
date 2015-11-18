@@ -23,7 +23,15 @@ using namespace lzrlbwt;
 
 int main(int argc, char** argv){
 
+	cout << "1" << endl;
+	gap_bv g;
+	cout << "2" << endl;
 
+	g = gap_bv();
+	cout << "3" << endl;
+
+	g.insert(0,true);
+	cout << "4" << endl;
 
 }
 
