@@ -1154,8 +1154,8 @@ private:
 	 *
 	 */
 	pair<ulint,ulint> synchronize(	pair<ulint,ulint> fwd_bwt_range,
-											pair<ulint,ulint> rev_bwt_range,
-											uchar c){
+									pair<ulint,ulint> rev_bwt_range,
+									uchar c){
 
 		//we do not accept reserved 0x0 character
 		assert(c>0);

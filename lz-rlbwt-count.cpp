@@ -24,11 +24,11 @@ using namespace lzrlbwt;
 using namespace std;
 
 void help(){
-	cout << "lz-rlbwt-search" << endl << endl;
-	cout << "Usage: lz-rlbwt-search <index_basename> <patterns_file>" << endl;
+	cout << "lz-rlbwt-count: count number of occurrences of the input patterns. Note that this program" << endl;
+	cout << "discards the output (i.e. number of pattern occurrences), and should be used only for benchmark purposes." << endl << endl;
+	cout << "Usage: lz-rlbwt-count <index_basename> <patterns_file>" << endl;
 	cout << "   <index_basename>    basename of all index files" << endl;
 	cout << "   <patterns_file>     file in pizza&chili format containing the patterns." << endl;
-	cout << "   note: this program does not output alignment positions, and should be used only for benchmark." << endl;
 	exit(0);
 }
 
@@ -81,9 +81,8 @@ void search(string idx_basename, string patterns){
 
 		//cout << "locating " << idx.count(p) << " occurrences of "<< p << " ... " << flush;
 
-		auto occ = idx.locate(p);	//occurrences
-
-		occ_tot+=occ.size();
+		auto occ = idx.count(p);	//number of occurrences
+		occ_tot+=occ;
 
 		//cout << "done." << endl;
 
@@ -112,7 +111,7 @@ void search(string idx_basename, string patterns){
 	cout << "m * occ_t  = " << occ_tot*m << endl;
 	cout << "n*m + occ_t  = " << n*m+occ_tot << endl << endl;
 
-	cout << "Total search time : " << search << " milliseconds" << endl;
+	cout << "Total time : " << search << " milliseconds" << endl;
 	cout << "Search time : " << (double)search/n << " milliseconds/pattern (total: " << n << " patterns)" << endl;
 	cout << "Search time : " << (double)search/occ_tot << " milliseconds/occurrence (total: " << occ_tot << " occurrences)" << endl;
 
