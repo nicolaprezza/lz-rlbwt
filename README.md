@@ -46,6 +46,10 @@ This command will create the LZ-RLCSA index of the text file "input.txt" and wil
 
 Run
 
-> lz-rlbwt-search index_basename patterns_file
+> lz-rlbwt-count index_basename patterns_file
 
-to align a set of patterns in pizza&chilli format (http://pizzachili.dcc.uchile.cl/experiments.html) using the lz-rlcsa index. At the moment, this executable does not store the output anywhere (we use it only for benchmarking purposes)
+or
+
+> lz-rlbwt-locate index_basename patterns_file
+
+to count/locate a set of patterns in pizza&chilli format (http://pizzachili.dcc.uchile.cl/experiments.html) using the lz-rlcsa index. At the moment, these executables do not store the output anywhere (we use it only for benchmarking purposes)
