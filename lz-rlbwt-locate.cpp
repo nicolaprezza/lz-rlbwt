@@ -26,13 +26,14 @@ using namespace std;
 void help(){
 	cout << "lz-rlbwt-locate: locate all occurrences of the input patterns. Note that this program" << endl;
 	cout << "discards the output (i.e. text positions), and should be used only for benchmark purposes." << endl << endl;
-	cout << "Usage: lz-rlbwt-locate <index_basename> <patterns_file>" << endl;
+	cout << "Usage: lz-rlbwt-locate [options] <index_basename> <patterns_file>" << endl;
+	cout << "   --no-opt            if specified, some optimizations are disabled." << endl;
 	cout << "   <index_basename>    basename of all index files" << endl;
 	cout << "   <patterns_file>     file in pizza&chili format containing the patterns." << endl;
 	exit(0);
 }
 
-void search(string idx_basename, string patterns){
+void search(string idx_basename, string patterns, bool optimize = true){
 
     using std::chrono::high_resolution_clock;
     using std::chrono::duration_cast;
@@ -81,7 +82,7 @@ void search(string idx_basename, string patterns){
 
 		//cout << "locating " << idx.count(p) << " occurrences of "<< p << " ... " << flush;
 
-		auto occ = idx.locate(p);	//occurrences
+		auto occ = idx.locate(p, optimize);	//occurrences
 
 		occ_tot+=occ.size();
 
@@ -120,10 +121,31 @@ void search(string idx_basename, string patterns){
 
 int main(int argc, char** argv){
 
-	if(argc != 3)
+	if(argc != 3 and argc != 4)
 		help();
 
+	bool optimize = true;
+	string idx_basename, patterns;
+
+	if(argc==4){
+
+		if(not string(argv[1]).compare("--no-opt") == 0){
+			help();
+		}
+
+		optimize = false;
+
+		idx_basename = argv[2];
+		patterns = argv[3];
+
+	}else{
+
+		idx_basename = argv[1];
+		patterns = argv[2];
+
+	}
+
 	cout << "Loading LZ-RLBWT index" << endl;
-	search(argv[1],argv[2]);
+	search(idx_basename,patterns, optimize);
 
 }

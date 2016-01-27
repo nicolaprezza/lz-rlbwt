@@ -90,7 +90,7 @@ enum lzrlbwt_options{
 
 	verbose_out,		//print verbose ouput
 	bidirectional_bwt,	//if true, reverse index is not created / saved / loaded
-	light_index			//if true, both fwd index and 4-sided structure are not
+	light_index,		//if true, both fwd index and 4-sided structure are not
 						//created/saved/loaded
 
 };
@@ -187,17 +187,17 @@ public:
 	/* \param pattern	string to be searched
 	 * \return all occurrences (i.e. text positions) of the input pattern
 	 */
-	vector<ulint> locate(string &pattern){
+	vector<ulint> locate(string &pattern, bool optimize = true){
 
 		//if index is light, then locate is particular
 		if(type == light){
 
-			return locate_light(pattern);
+			return locate_light(pattern, optimize);
 
 		}
 
 		//else: locate with full or bidirectional index
-		return locate_bidir_full(pattern);
+		return locate_bidir_full(pattern, optimize);
 
 	}
 
@@ -334,7 +334,7 @@ public:
 
 	}
 
-	// load index from file
+	// index from file
 	/* \param basename_path		basename of the index files
 	 * \param opt	options: verbose output / load bidirectional index (i.e. do not load reverse bwt)
 	 */
@@ -483,7 +483,7 @@ public:
 
 private:
 
-	vector<ulint> locate_bidir_full(string &pattern){
+	vector<ulint> locate_bidir_full(string &pattern, bool optimize = true){
 
 		//vector containing all occurrences of the pattern
 		vector<ulint> occ;
@@ -545,7 +545,8 @@ private:
 			pair<ulint, ulint> range_fwd = st_sub->interval(fwd_range);
 
 			//if ranges are non-empty
-			if(range_fwd.second>=range_fwd.first){
+			//if optimize = false, execute this in any case
+			if((not optimize) or (range_fwd.second>=range_fwd.first)){
 
 				if(type == bidirectional){
 
@@ -619,7 +620,8 @@ private:
 						for(auto o : occ_temp){
 
 							//perform 2-sided range search only if there still are occurrences to be found
-							if(occ.size() < n_occ){
+							//if optimize = false, do this in any case
+							if((not optimize) or occ.size() < n_occ){
 
 								//recursively compute occurrences of phrases that copy T[o,...,o+m-1]
 								auto occ_2_sided = query_2_sided_recursive(o,o+m-1);
@@ -649,10 +651,12 @@ private:
 
 	}
 
-	vector<ulint> locate_light(string &pattern){
+	vector<ulint> locate_light(string &pattern, bool optimize = true){
 
 		//first, find range of pattern (reversed because we use the reverse index)
 		auto range = fm_index_rev->count(pattern,true);
+
+		ulint n_occ = range.second < range.first ? 0 : range.second - range.first + 1;
 
 		//we will extract text in range and put here all primary occurrences found
 		set<ulint> primary_occurrences;
@@ -660,14 +664,20 @@ private:
 
 		vector<ulint> occ;
 
+		for(auto o1:primary_occurrences) occ.push_back(o1);
+
 		for(auto o1:primary_occurrences){
 
-			occ.push_back(o1);
+			if((not optimize) or occ.size() < n_occ){
 
-			for(auto o2 : query_2_sided_recursive(o1,o1+pattern.size()-1))
-				occ.push_back(o2);
+				for(auto o2 : query_2_sided_recursive(o1,o1+pattern.size()-1))
+					occ.push_back(o2);
+
+			}
 
 		}
+
+		assert(n_occ == count(pattern));
 
 		return occ;
 
