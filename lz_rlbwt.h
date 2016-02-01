@@ -1279,8 +1279,7 @@ private:
 														//adjacent lz factors
 	range_search_t * lz_2_sided_range_search = NULL; 	// points with occurring positions of factors
 
-	fm_index_t * fm_index_fwd = NULL;	// O(R) words. FM index for the forward text, where factors
-										//are separated with a SEPARATOR character
+	fm_index_t * fm_index_fwd = NULL;	// O(R) words. FM index for the forward text
 	fm_index_t * fm_index_rev = NULL;	// O(R) words. FM index for the reversed text
 
 	// z words. marks with a 1 positions in the F column of rev BWT
