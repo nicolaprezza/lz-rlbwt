@@ -60,7 +60,7 @@ public:
 
 		for(ulint i=1;i<input.size();++i){
 
-			if(input[i] != last_c){
+			if(uchar(input[i]) != last_c){
 
 				run_heads_s.push_back(last_c);
 				runs_per_letter_bv[last_c].push_back(true);
@@ -87,6 +87,10 @@ public:
 		R++;
 
 		assert(run_heads_s.size()==R);
+		assert(R==count_runs(input));
+
+		//cout << "runs in BWT(input) = " << count_runs(input) << endl;
+		//cout << "runs in rle bwt = " << R << endl << endl;
 
 		//now compact structures
 
@@ -351,6 +355,21 @@ public:
 	}
 
 private:
+
+	static ulint count_runs(string &s){
+
+		ulint runs=1;
+
+		for(ulint i=1;i<s.size();++i){
+
+			if(s[i]!=s[i-1]) runs++;
+
+		}
+
+		return runs;
+
+	}
+
 
 	//<j=run of position i, last position of j-th run>
 	pair<ulint,ulint> run_of(ulint i){

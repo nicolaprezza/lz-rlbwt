@@ -36,12 +36,6 @@
  *	bidirectional and light indexes have several optimizations implemented, so the worst cases
  *	rarely should occur.
  *
- *  The class is a template on the word type and on its building blocks (FM index, range search,
- *  sparse bitvector.)
- *  Choosing a smaller ulint (default=32 bit) reduces the size of the structure. Even though it is possible
- *  to specify a 64-bit integer word type, using texts larger than 4GB may cause problems with the underlying
- *  rlbwt data structure (which uses 32-bits integers)
- *
  *  For more info, read the paper: "Djamal Belazzougui, Fabio Cunial, Travis Gagie, Nicola Prezza, and Mathieu
  *  Raffinot. Composite repetition-aware data structures"
  *
