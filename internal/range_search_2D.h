@@ -489,6 +489,10 @@ public:
 	    return *this;
 	}
 
+	uint64_t number_of_phrases(){
+		return obj.size();
+	}
+
 private:
 
 	wt_int<> wt;			//the underlying wavelet tree
