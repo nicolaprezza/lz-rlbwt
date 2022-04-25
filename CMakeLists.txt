@@ -15,8 +15,9 @@ include_directories(${PROJECT_SOURCE_DIR}/internal)
 include_directories(~/include) #SDSL headers are here
 include_directories(${PROJECT_SOURCE_DIR}/extern/BWTIL)
 include_directories(${PROJECT_SOURCE_DIR}/extern/BWTIL/extern/bitvector/include)
-include_directories(${PROJECT_SOURCE_DIR}/extern/DYNAMIC/include)
-include_directories(${PROJECT_SOURCE_DIR}/extern/DYNAMIC/include/internal)
+include_directories(${PROJECT_SOURCE_DIR}/extern/DYNAMIC/include/)
+#include_directories(${PROJECT_SOURCE_DIR}/extern/DYNAMIC/include/dynamic/)
+include_directories(${PROJECT_SOURCE_DIR}/extern/DYNAMIC/build/hopscotch_map-prefix/src/hopscotch_map/include/)
 
 LINK_DIRECTORIES(~/lib) #SDSL lib are here
 

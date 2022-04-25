@@ -55,7 +55,7 @@
 #include <range_search_2D.h>
 #include <st_subset.h>
 #include <packed_view.h>
-#include <dynamic.hpp>
+#include "dynamic/dynamic.hpp"
 
 using namespace std;
 using namespace sdsl;
